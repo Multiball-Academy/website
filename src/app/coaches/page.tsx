@@ -10,11 +10,34 @@ export default function CoachesPage() {
     background: "",
     why: "",
   });
+  const [touched, setTouched] = useState({
+    name: false,
+    email: false,
+  });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
+  // Validation helpers
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const nameError = touched.name && !formData.name.trim() ? "Name is required" : "";
+  const emailError = touched.email 
+    ? (!formData.email.trim() ? "Email is required" : !isValidEmail(formData.email) ? "Please enter a valid email" : "")
+    : "";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Mark all required fields as touched
+    setTouched({ name: true, email: true });
+    
+    // Validate before submitting
+    if (!formData.name.trim() || !formData.email.trim() || !isValidEmail(formData.email)) {
+      return;
+    }
+    
     setStatus("loading");
 
     try {
@@ -179,34 +202,45 @@ export default function CoachesPage() {
           {status !== "success" ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-slate-300 mb-2">Name</label>
+                <label htmlFor="name" className="block text-slate-300 mb-2">Name <span className="text-red-400">*</span></label>
                 <input
                   type="text"
                   id="name"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onBlur={() => setTouched({ ...touched, name: true })}
                   disabled={status === "loading"}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                  className={`w-full px-4 py-3 rounded-xl bg-white/10 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 ${
+                    nameError ? "border-red-400" : "border-white/20"
+                  }`}
                 />
+                {nameError && <p className="text-red-400 text-sm mt-1">{nameError}</p>}
               </div>
               
               <div>
-                <label htmlFor="email" className="block text-slate-300 mb-2">Email</label>
+                <label htmlFor="email" className="block text-slate-300 mb-2">Email <span className="text-red-400">*</span></label>
                 <input
                   type="email"
                   id="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    if (touched.email) setTouched({ ...touched, email: true });
+                  }}
+                  onBlur={() => setTouched({ ...touched, email: true })}
                   disabled={status === "loading"}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                  className={`w-full px-4 py-3 rounded-xl bg-white/10 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 ${
+                    emailError ? "border-red-400" : "border-white/20"
+                  }`}
                 />
+                {emailError && <p className="text-red-400 text-sm mt-1">{emailError}</p>}
               </div>
               
               <div>
                 <label htmlFor="background" className="block text-slate-300 mb-2">
-                  Your background (coaching, teaching, pinball, etc.)
+                  Your background <span className="text-slate-500">(optional)</span>
                 </label>
                 <textarea
                   id="background"
@@ -220,7 +254,7 @@ export default function CoachesPage() {
               
               <div>
                 <label htmlFor="why" className="block text-slate-300 mb-2">
-                  Why does this interest you?
+                  Why does this interest you? <span className="text-slate-500">(optional)</span>
                 </label>
                 <textarea
                   id="why"
