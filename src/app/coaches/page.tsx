@@ -40,6 +40,15 @@ export default function CoachesPage() {
     }
   };
 
+  // Styled icon component matching silverball aesthetic
+  const StyledIcon = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+    <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-slate-200 via-white to-slate-400 flex items-center justify-center shadow-lg ${className}`}>
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 via-slate-300 to-slate-500 flex items-center justify-center text-slate-700 font-bold">
+        {children}
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Nav */}
@@ -58,7 +67,7 @@ export default function CoachesPage() {
           </span>
         </h1>
         <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-          We&apos;re building Little League for pinball. Want in?
+          Help kids build focus, resilience, and real-world skills through competitive pinball.
         </p>
       </header>
 
@@ -85,15 +94,17 @@ export default function CoachesPage() {
           <h2 className="text-2xl font-bold text-white mb-4">What Coaches Do</h2>
           <div className="grid md:grid-cols-2 gap-4">
             {[
-              { icon: "🎯", title: "Run Practice", desc: "Lead drills, facilitate games, keep energy high" },
-              { icon: "🧠", title: "Coach Mindset", desc: "Help kids manage frustration, build focus, compete well" },
-              { icon: "🔧", title: "Flipper Lab", desc: "Guide hands-on repair and tinkering sessions" },
-              { icon: "🤝", title: "Build Relationships", desc: "Be a mentor, not just an instructor" },
+              { icon: "01", title: "Run Practice", desc: "Lead drills, facilitate games, keep energy high" },
+              { icon: "02", title: "Coach Mindset", desc: "Help kids manage frustration, build focus, compete well" },
+              { icon: "03", title: "Flipper Lab", desc: "Guide hands-on repair and tinkering sessions" },
+              { icon: "04", title: "Build Relationships", desc: "Be a mentor, not just an instructor" },
             ].map((item) => (
-              <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl p-5">
-                <div className="text-3xl mb-2">{item.icon}</div>
-                <h3 className="text-white font-semibold mb-1">{item.title}</h3>
-                <p className="text-slate-400 text-sm">{item.desc}</p>
+              <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl p-5 flex gap-4">
+                <StyledIcon>{item.icon}</StyledIcon>
+                <div>
+                  <h3 className="text-white font-semibold mb-1">{item.title}</h3>
+                  <p className="text-slate-400 text-sm">{item.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -110,7 +121,7 @@ export default function CoachesPage() {
               "College students looking for meaningful part-time work",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">
-                <span className="text-cyan-400 mt-1">✓</span>
+                <span className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 mt-2 flex-shrink-0"></span>
                 <span>{item}</span>
               </li>
             ))}
@@ -124,10 +135,22 @@ export default function CoachesPage() {
         <section className="mb-16">
           <h2 className="text-2xl font-bold text-white mb-4">What You Get</h2>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-3 text-slate-300">
-            <p>✦ Training on pinball fundamentals + our coaching philosophy</p>
-            <p>✦ <strong className="text-cyan-400">Coach Flip</strong> as your second brain (player insights, session prep)</p>
-            <p>✦ Paid positions (hourly for camps, flexible for ongoing)</p>
-            <p>✦ A chance to build something from the ground up</p>
+            <p className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+              Training on pinball fundamentals + our coaching philosophy
+            </p>
+            <p className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+              <strong className="text-cyan-400">Coach Flip</strong> as your second brain (player insights, session prep)
+            </p>
+            <p className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+              Paid positions (hourly for camps, flexible for ongoing)
+            </p>
+            <p className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+              A chance to build something from the ground up
+            </p>
           </div>
         </section>
 

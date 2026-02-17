@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -111,6 +112,17 @@ export default function Home() {
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
           Summer 2026 — Memphis, TN
         </div>
+
+        {/* Coaches CTA */}
+        <Link 
+          href="/coaches" 
+          className="mt-8 inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors group"
+        >
+          <span className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 via-white to-slate-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-100 via-slate-300 to-slate-500"></span>
+          </span>
+          <span>Interested in coaching? <span className="text-cyan-400 group-hover:underline">Learn more →</span></span>
+        </Link>
       </div>
 
       {/* Footer */}
