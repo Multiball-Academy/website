@@ -35,16 +35,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col items-center px-4 relative overflow-hidden">
       {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse delay-500"></div>
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 text-center max-w-2xl mx-auto">
+      <div className="relative z-10 text-center max-w-2xl mx-auto flex-1 flex flex-col justify-center py-12">
         {/* Silverball Icon */}
         <div className="mb-8">
           <div className="inline-flex items-center justify-center w-28 h-28 rounded-full bg-gradient-to-br from-slate-200 via-white to-slate-400 shadow-2xl shadow-white/30 relative">
@@ -114,7 +114,7 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="absolute bottom-8 text-slate-500 text-sm">
+      <footer className="relative z-10 pb-8 text-slate-500 text-sm text-center">
         <p>© 2026 Multiball Academy. All rights reserved.</p>
       </footer>
     </div>
