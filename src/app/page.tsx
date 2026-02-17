@@ -45,10 +45,17 @@ export default function Home() {
 
       {/* Main content */}
       <div className="relative z-10 text-center max-w-2xl mx-auto">
-        {/* Logo/Icon */}
+        {/* Silverball Icon */}
         <div className="mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 shadow-2xl shadow-purple-500/30">
-            <span className="text-5xl">🎯</span>
+          <div className="inline-flex items-center justify-center w-28 h-28 rounded-full bg-gradient-to-br from-slate-200 via-white to-slate-400 shadow-2xl shadow-white/30 relative">
+            {/* Metallic shine effect */}
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-100 via-slate-300 to-slate-500"></div>
+            {/* Inner highlight */}
+            <div className="absolute top-3 left-4 w-8 h-8 rounded-full bg-gradient-to-br from-white to-transparent opacity-80 blur-sm"></div>
+            {/* Secondary highlight */}
+            <div className="absolute top-5 left-6 w-3 h-3 rounded-full bg-white opacity-90"></div>
+            {/* Bottom reflection */}
+            <div className="absolute bottom-4 right-4 w-6 h-6 rounded-full bg-gradient-to-tl from-slate-400 to-transparent opacity-50 blur-sm"></div>
           </div>
         </div>
 
