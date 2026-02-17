@@ -4,13 +4,34 @@ import { useState } from "react";
 
 export default function Home() {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Connect to email service (Mailchimp, ConvertKit, etc.)
-    console.log("Email submitted:", email);
-    setSubmitted(true);
+    setStatus("loading");
+
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setStatus("success");
+        setMessage(data.message || "You're on the list!");
+        setEmail("");
+      } else {
+        setStatus("error");
+        setMessage(data.error || "Something went wrong.");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("Network error. Please try again.");
+    }
   };
 
   return (
@@ -48,31 +69,38 @@ export default function Home() {
         </p>
 
         {/* Email signup */}
-        {!submitted ? (
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-8">
+        {status !== "success" ? (
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-4">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               required
-              className="flex-1 px-6 py-4 rounded-full bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+              disabled={status === "loading"}
+              className="flex-1 px-6 py-4 rounded-full bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm disabled:opacity-50"
             />
             <button
               type="submit"
-              className="px-8 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:from-cyan-400 hover:to-purple-400 transition-all duration-200 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
+              disabled={status === "loading"}
+              className="px-8 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:from-cyan-400 hover:to-purple-400 transition-all duration-200 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Notify Me
+              {status === "loading" ? "..." : "Notify Me"}
             </button>
           </form>
         ) : (
-          <div className="mb-8 px-6 py-4 rounded-full bg-green-500/20 border border-green-500/30 text-green-400 max-w-md mx-auto">
-            ✓ You&apos;re on the list! We&apos;ll be in touch.
+          <div className="mb-4 px-6 py-4 rounded-full bg-green-500/20 border border-green-500/30 text-green-400 max-w-md mx-auto">
+            ✓ {message}
           </div>
         )}
 
+        {/* Error message */}
+        {status === "error" && (
+          <p className="text-red-400 text-sm mb-4">{message}</p>
+        )}
+
         {/* Coming soon badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-slate-400 text-sm">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-slate-400 text-sm mt-4">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
           Summer 2026 — Memphis, TN
         </div>
