@@ -69,11 +69,11 @@ export default function Home() {
         </h1>
 
         {/* Tagline */}
-        <p className="text-xl md:text-2xl text-slate-300 mb-2 font-light">
-          Youth Competitive Pinball
+        <p className="text-xl md:text-2xl text-slate-300 mb-2 font-semibold tracking-wide">
+          Flip. Tinker. Play.
         </p>
         <p className="text-lg text-slate-400 mb-12">
-          Building focus, resilience, and community — one flipper at a time.
+          Youth pinball + maker space. Building skills, focus, and fun.
         </p>
 
         {/* Email signup */}
