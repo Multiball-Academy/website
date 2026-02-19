@@ -8,20 +8,20 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Multiball Academy | Youth Competitive Pinball",
-  description: "Building focus, resilience, and community through competitive pinball. Summer camps and year-round programs for ages 8-16 in Memphis, TN.",
-  keywords: ["pinball", "youth sports", "Memphis", "summer camp", "competitive gaming", "STEM"],
+  title: "Multiball Academy | Flip. Tinker. Play.",
+  description: "Youth pinball + maker space. Building skills, focus, and fun. Summer camps and year-round programs for ages 8-16 in Memphis, TN.",
+  keywords: ["pinball", "youth sports", "Memphis", "summer camp", "maker space", "STEM", "coding"],
   authors: [{ name: "Multiball Academy" }],
   openGraph: {
-    title: "Multiball Academy | Youth Competitive Pinball",
-    description: "Building focus, resilience, and community — one flipper at a time.",
+    title: "Multiball Academy | Flip. Tinker. Play.",
+    description: "Youth pinball + maker space. Building skills, focus, and fun.",
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: "Multiball Academy",
-    description: "Youth Competitive Pinball — Summer 2026 in Memphis, TN",
+    description: "Flip. Tinker. Play. — Summer 2026 in Memphis, TN",
   },
 };
 
