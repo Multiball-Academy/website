@@ -115,7 +115,7 @@ export default function Home() {
 
         {/* Coaches CTA */}
         <Link 
-          href="/coaches" 
+          href="/join" 
           className="mt-8 inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors group"
         >
           <span className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 via-white to-slate-400 flex items-center justify-center group-hover:scale-110 transition-transform">
