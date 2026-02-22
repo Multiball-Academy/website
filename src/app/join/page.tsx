@@ -7,6 +7,7 @@ export default function CoachesPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    role: "",
     background: "",
     why: "",
   });
@@ -52,7 +53,7 @@ export default function CoachesPage() {
       if (response.ok) {
         setStatus("success");
         setMessage(data.message || "Thanks! We'll be in touch.");
-        setFormData({ name: "", email: "", background: "", why: "" });
+        setFormData({ name: "", email: "", role: "", background: "", why: "" });
       } else {
         setStatus("error");
         setMessage(data.error || "Something went wrong.");
@@ -84,13 +85,13 @@ export default function CoachesPage() {
       {/* Hero */}
       <header className="relative z-10 text-center px-4 pt-8 pb-16">
         <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-          Coach with{" "}
+          Join the{" "}
           <span className="bg-gradient-to-r from-cyan-400 to-purple-400 text-transparent bg-clip-text">
-            Multiball Academy
+            Camp Crew
           </span>
         </h1>
         <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-          Help kids build focus, resilience, and real-world skills through competitive pinball.
+          Help kids build focus, resilience, and real-world skills through pinball and hands-on making.
         </p>
       </header>
 
@@ -101,8 +102,8 @@ export default function CoachesPage() {
           <h2 className="text-2xl font-bold text-white mb-4">The Opportunity</h2>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 text-slate-300">
             <p>
-              Summer camps start 2026, with year-round programs to follow. We need coaches who are 
-              great with kids. <strong className="text-white">Pinball skills? Optional.</strong>
+              Summer camps start 2026, with year-round programs to follow. We need people who are 
+              great with kids — whether you want to lead, assist, or help out. <strong className="text-white">Pinball skills? Optional.</strong>
             </p>
             <p>
               Our AI coaching assistant, <strong className="text-cyan-400">Coach Flip</strong>, handles 
@@ -112,14 +113,52 @@ export default function CoachesPage() {
           </div>
         </section>
 
-        {/* What Coaches Do */}
+        {/* Roles */}
         <section className="mb-16">
-          <h2 className="text-2xl font-bold text-white mb-4">What Coaches Do</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">Ways to Get Involved</h2>
+          <div className="grid gap-4">
+            {[
+              { 
+                icon: "🎯", 
+                title: "Lead Coach", 
+                commitment: "Full camp week",
+                desc: "Run the daily schedule, lead skills sessions, and guide the overall camp experience. You're the face of the program." 
+              },
+              { 
+                icon: "🔧", 
+                title: "Maker Lab Assistant", 
+                commitment: "Flexible",
+                desc: "Help kids build circuits, wire kickers, and create their kinetic sculptures. Perfect if you're handy and patient." 
+              },
+              { 
+                icon: "🙌", 
+                title: "Volunteer", 
+                commitment: "Half-day shifts OK",
+                desc: "Support the team with check-in, snacks, setup, and general help. Great way to be involved without a big commitment." 
+              },
+            ].map((item) => (
+              <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl p-5 flex gap-4">
+                <div className="text-3xl">{item.icon}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="text-white font-semibold">{item.title}</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-xs">{item.commitment}</span>
+                  </div>
+                  <p className="text-slate-400 text-sm">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* What Team Members Do */}
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold text-white mb-4">What the Crew Does</h2>
           <div className="grid md:grid-cols-2 gap-4">
             {[
-              { icon: "01", title: "Run Practice", desc: "Lead drills, facilitate games, keep energy high" },
+              { icon: "01", title: "Run Labs & Practice", desc: "Lead skills drills, maker sessions, and keep the energy high" },
               { icon: "02", title: "Coach Mindset", desc: "Help kids manage frustration, build focus, compete well" },
-              { icon: "03", title: "Flipper Lab", desc: "Guide hands-on repair and tinkering sessions" },
+              { icon: "03", title: "Hands-On Making", desc: "Guide building projects — circuits, kickers, kinetic sculptures" },
               { icon: "04", title: "Build Relationships", desc: "Be a mentor, not just an instructor" },
             ].map((item) => (
               <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl p-5 flex gap-4">
@@ -139,9 +178,11 @@ export default function CoachesPage() {
           <ul className="space-y-3 text-slate-300">
             {[
               "Teachers, sports coaches, youth mentors",
+              "Makers, tinkerers, and handy people",
               "Pinball enthusiasts who enjoy working with kids",
               "Parents who want to be more involved",
               "College students looking for meaningful part-time work",
+              "Anyone who wants to help (even a few hours)",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">
                 <span className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 mt-2 flex-shrink-0"></span>
@@ -168,7 +209,7 @@ export default function CoachesPage() {
             </p>
             <p className="flex items-center gap-3">
               <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-              Paid positions (hourly for camps, flexible for ongoing)
+              Paid positions for lead coaches; stipends for assistants
             </p>
             <p className="flex items-center gap-3">
               <span className="w-2 h-2 rounded-full bg-purple-400"></span>
@@ -183,8 +224,8 @@ export default function CoachesPage() {
           <div className="space-y-4">
             {[
               { q: "Do I need to be a pinball expert?", a: "No. Coach Flip handles game knowledge. You focus on the kids." },
-              { q: "What's the time commitment?", a: "Flexible. One summer camp, ongoing involvement, or somewhere in between." },
-              { q: "Is this paid?", a: "Yes. Hourly rate for camps, with room to grow into larger roles." },
+              { q: "What's the time commitment?", a: "Flexible. Lead a full camp, help with maker labs, or volunteer for a few hours. Whatever works for you." },
+              { q: "Is this paid?", a: "Lead coaches: hourly rate. Assistants: stipend. Volunteers: our eternal gratitude (and free lunch)." },
               { q: "Where is this?", a: "Memphis, TN. In-person for camps and programs." },
             ].map((item) => (
               <div key={item.q} className="bg-white/5 border border-white/10 rounded-xl p-5">
@@ -237,6 +278,25 @@ export default function CoachesPage() {
                 />
                 {emailError && <p className="text-red-400 text-sm mt-1">{emailError}</p>}
               </div>
+
+              <div>
+                <label htmlFor="role" className="block text-slate-300 mb-2">
+                  What role interests you? <span className="text-slate-500">(optional)</span>
+                </label>
+                <select
+                  id="role"
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  disabled={status === "loading"}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                >
+                  <option value="" className="bg-slate-800">Not sure yet</option>
+                  <option value="lead-coach" className="bg-slate-800">Lead Coach</option>
+                  <option value="maker-assistant" className="bg-slate-800">Maker Lab Assistant</option>
+                  <option value="volunteer" className="bg-slate-800">Volunteer</option>
+                  <option value="multiple" className="bg-slate-800">Open to multiple roles</option>
+                </select>
+              </div>
               
               <div>
                 <label htmlFor="background" className="block text-slate-300 mb-2">
@@ -275,7 +335,7 @@ export default function CoachesPage() {
                 disabled={status === "loading"}
                 className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:from-cyan-400 hover:to-purple-400 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {status === "loading" ? "Sending..." : "I'm Interested"}
+                {status === "loading" ? "Sending..." : "I'm In"}
               </button>
             </form>
           ) : (
