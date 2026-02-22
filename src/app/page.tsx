@@ -121,7 +121,7 @@ export default function Home() {
           <span className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 via-white to-slate-400 flex items-center justify-center group-hover:scale-110 transition-transform">
             <span className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-100 via-slate-300 to-slate-500"></span>
           </span>
-          <span>Interested in coaching? <span className="text-cyan-400 group-hover:underline">Learn more →</span></span>
+          <span>Want to help? <span className="text-cyan-400 group-hover:underline">Join the crew →</span></span>
         </Link>
       </div>
 
