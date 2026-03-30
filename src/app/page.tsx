@@ -107,6 +107,17 @@ export default function Home() {
           <p className="text-red-400 text-sm mb-4">{message}</p>
         )}
 
+        {/* Register CTA */}
+        <Link
+          href="/register"
+          className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-lg font-semibold hover:from-cyan-400 hover:to-purple-400 transition-all duration-200 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 mt-6"
+        >
+          Register for Summer Camp
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </Link>
+
         {/* Coming soon badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-slate-400 text-sm mt-4">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
