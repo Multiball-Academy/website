@@ -98,12 +98,13 @@ export default function RegisterPage() {
             <ul className="space-y-3 text-slate-300">
               {[
                 "Full week of instruction (Mon–Fri, 9am–3pm)",
-                "Professional pinball machines to practice on",
-                "Maker lab projects (circuits, mechanisms, art)",
-                "Friday tournament with trophies",
-                "Camp t-shirt",
-                "Snacks and drinks",
-                "Access to Coach Flip AI coaching app",
+                "Professional pinball machines to learn and compete on",
+                "Maker lab supplies: switches, LEDs, solenoids, wiring",
+                "Build a kinetic sculpture with real pinball parts (yours to keep!)",
+                "Lab notebook for experiments and designs",
+                "Friday tournament with trophies + science fair for parents",
+                "Camp t-shirt and completion certificate",
+                "Snacks and drinks daily",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3">
                   <span className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 mt-2 flex-shrink-0"></span>
@@ -119,26 +120,61 @@ export default function RegisterPage() {
           <h2 className="text-2xl font-bold text-white mb-4">The Week</h2>
           <div className="space-y-3">
             {[
-              { day: "Monday", focus: "Foundations", desc: "Meet the machines, flipper basics, first games" },
-              { day: "Tuesday", focus: "Strategy", desc: "When to trap, shot selection, reading modes" },
-              { day: "Wednesday", focus: "Deep Dive", desc: "Scoring systems, multipliers, wizard goals" },
-              { day: "Thursday", focus: "Tournament Prep", desc: "Practice matches, bracket format, mindset" },
-              { day: "Friday", focus: "Tournament Day", desc: "Real competition, trophies, family showcase" },
+              { 
+                day: "Monday", 
+                focus: "How Things Work", 
+                skills: "Ball control, trapping, flipper basics",
+                maker: "Open up a machine, build your first circuit (switch → LED)"
+              },
+              { 
+                day: "Tuesday", 
+                focus: "Physics of the Game", 
+                skills: "Shot selection, safe vs. dangerous plays",
+                maker: "Run physics experiments, wire a kicker coil that fires"
+              },
+              { 
+                day: "Wednesday", 
+                focus: "Cracking the Code", 
+                skills: "Reading rules, starting modes on purpose",
+                maker: "How the computer works: inputs, outputs, game logic"
+              },
+              { 
+                day: "Thursday", 
+                focus: "Build Day", 
+                skills: "Tournament prep, playing under pressure",
+                maker: "Design and build your kinetic sculpture with real pinball parts"
+              },
+              { 
+                day: "Friday", 
+                focus: "Showcase Day", 
+                skills: "Tournament finals, awards ceremony",
+                maker: "Finish sculptures, science fair for parents at 2pm"
+              },
             ].map((item) => (
               <div
                 key={item.day}
-                className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-4"
+                className="bg-white/5 border border-white/10 rounded-xl p-4"
               >
-                <div className="w-24 flex-shrink-0">
-                  <div className="text-cyan-400 font-semibold">{item.day}</div>
-                </div>
-                <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="text-cyan-400 font-semibold w-28">{item.day}</div>
                   <div className="text-white font-semibold">{item.focus}</div>
-                  <div className="text-slate-400 text-sm">{item.desc}</div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-purple-400">🎯</span>
+                    <span className="text-slate-400">{item.skills}</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-purple-400">🔧</span>
+                    <span className="text-slate-400">{item.maker}</span>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
+          <p className="text-slate-500 text-sm mt-4 italic">
+            Every day: Skills Lab + Maker Lab + Free Play. Campers keep a lab notebook like a real scientist.
+          </p>
         </section>
 
         {/* What to Bring */}
