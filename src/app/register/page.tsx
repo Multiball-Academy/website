@@ -6,9 +6,6 @@ const SAWYER_URL = "https://www.sawyer.com/providers/multiball-academy"; // Upda
 
 const sessions = [
   { id: 1, dates: "June 23–27", status: "open" },
-  { id: 2, dates: "July 7–11", status: "open" },
-  { id: 3, dates: "July 14–18", status: "open" },
-  { id: 4, dates: "July 21–25", status: "open" },
 ];
 
 export default function RegisterPage() {
@@ -62,32 +59,15 @@ export default function RegisterPage() {
           </div>
         </section>
 
-        {/* Sessions */}
+        {/* Session */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-4">Choose Your Week</h2>
-          <div className="space-y-3">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="bg-white/5 border border-white/10 rounded-xl p-5 flex items-center justify-between"
-              >
-                <div>
-                  <div className="text-white font-semibold">Session {session.id}</div>
-                  <div className="text-slate-400">{session.dates}, 2026</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {session.status === "open" ? (
-                    <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm">
-                      Spots Available
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm">
-                      Waitlist
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+          <div className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-white/10 rounded-xl p-6 text-center">
+            <div className="text-slate-400 text-sm uppercase tracking-wide mb-1">Summer 2026</div>
+            <div className="text-3xl font-bold text-white mb-2">June 23–27</div>
+            <div className="text-slate-300">Monday–Friday, 9am–3pm</div>
+            <span className="inline-block mt-3 px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm">
+              Spots Available
+            </span>
           </div>
         </section>
 
@@ -238,8 +218,8 @@ export default function RegisterPage() {
                 a: "Memphis, TN. Exact location will be shared with registered families 2 weeks before camp." 
               },
               { 
-                q: "Can my kid do multiple weeks?", 
-                a: "Absolutely! Each week builds skills. Repeat campers get deeper into strategy and maker projects." 
+                q: "Will there be more sessions?", 
+                a: "If this summer goes well, we'll add more sessions in the future. Get in on the first one!" 
               },
             ].map((item) => (
               <div key={item.q} className="bg-white/5 border border-white/10 rounded-xl p-5">
