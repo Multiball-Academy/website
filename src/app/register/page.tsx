@@ -9,21 +9,62 @@ type FormStep = "info" | "camper" | "medical" | "agreements" | "payment";
 const REGULAR_PRICE = 395;
 const EARLY_BIRD_PRICE = 295;
 const EARLY_BIRD_DEADLINE = new Date("2026-04-30T23:59:59");
+const SIBLING_DISCOUNT = 0.10; // 10% off for additional campers
 
-function useEarlyBird() {
+function usePricing(camperCount: number) {
   const [isEarlyBird, setIsEarlyBird] = useState(true);
   
   useEffect(() => {
     setIsEarlyBird(new Date() <= EARLY_BIRD_DEADLINE);
   }, []);
   
+  const basePrice = isEarlyBird ? EARLY_BIRD_PRICE : REGULAR_PRICE;
+  const siblingPrice = Math.round(basePrice * (1 - SIBLING_DISCOUNT));
+  
+  // First camper full price, rest get sibling discount
+  const total = camperCount === 1 
+    ? basePrice 
+    : basePrice + (siblingPrice * (camperCount - 1));
+  
+  const siblingDiscount = camperCount > 1 
+    ? (basePrice - siblingPrice) * (camperCount - 1)
+    : 0;
+  
   return {
     isEarlyBird,
-    currentPrice: isEarlyBird ? EARLY_BIRD_PRICE : REGULAR_PRICE,
+    basePrice,
+    siblingPrice,
+    total,
     regularPrice: REGULAR_PRICE,
-    savings: REGULAR_PRICE - EARLY_BIRD_PRICE,
+    earlyBirdSavings: REGULAR_PRICE - EARLY_BIRD_PRICE,
+    siblingDiscount,
+    camperCount,
   };
 }
+
+interface CamperData {
+  firstName: string;
+  lastName: string;
+  birthdate: string;
+  age: string;
+  grade: string;
+  tshirtSize: string;
+  allergies: string;
+  medications: string;
+  medicalConditions: string;
+}
+
+const emptyCamper: CamperData = {
+  firstName: "",
+  lastName: "",
+  birthdate: "",
+  age: "",
+  grade: "",
+  tshirtSize: "",
+  allergies: "",
+  medications: "",
+  medicalConditions: "",
+};
 
 interface FormData {
   // Parent/Guardian
@@ -36,23 +77,15 @@ interface FormData {
   state: string;
   zip: string;
   
-  // Camper
-  camperFirstName: string;
-  camperLastName: string;
-  camperBirthdate: string;
-  camperAge: string;
-  camperGrade: string;
-  tshirtSize: string;
+  // Campers (array for siblings)
+  campers: CamperData[];
   
   // Emergency Contact
   emergencyName: string;
   emergencyPhone: string;
   emergencyRelation: string;
   
-  // Medical
-  allergies: string;
-  medications: string;
-  medicalConditions: string;
+  // Medical (shared)
   doctorName: string;
   doctorPhone: string;
   insuranceProvider: string;
@@ -77,18 +110,10 @@ const initialFormData: FormData = {
   city: "",
   state: "",
   zip: "",
-  camperFirstName: "",
-  camperLastName: "",
-  camperBirthdate: "",
-  camperAge: "",
-  camperGrade: "",
-  tshirtSize: "",
+  campers: [{ ...emptyCamper }],
   emergencyName: "",
   emergencyPhone: "",
   emergencyRelation: "",
-  allergies: "",
-  medications: "",
-  medicalConditions: "",
   doctorName: "",
   doctorPhone: "",
   insuranceProvider: "",
@@ -112,17 +137,56 @@ export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState<FormStep>("info");
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const pricing = useEarlyBird();
+  const pricing = usePricing(formData.campers.length);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user types
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    if (errors[field as string]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field as string];
+        return next;
+      });
+    }
+  };
+
+  const updateCamper = (index: number, field: keyof CamperData, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      campers: prev.campers.map((c, i) => 
+        i === index ? { ...c, [field]: value } : c
+      ),
+    }));
+    const errorKey = `camper_${index}_${field}`;
+    if (errors[errorKey]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[errorKey];
+        return next;
+      });
+    }
+  };
+
+  const addCamper = () => {
+    if (formData.campers.length < 4) {
+      setFormData((prev) => ({
+        ...prev,
+        campers: [...prev.campers, { ...emptyCamper }],
+      }));
+    }
+  };
+
+  const removeCamper = (index: number) => {
+    if (formData.campers.length > 1) {
+      setFormData((prev) => ({
+        ...prev,
+        campers: prev.campers.filter((_, i) => i !== index),
+      }));
     }
   };
 
@@ -139,7 +203,7 @@ export default function RegisterPage() {
   };
 
   const validateStep = (step: FormStep): boolean => {
-    const newErrors: Partial<Record<keyof FormData, string>> = {};
+    const newErrors: Record<string, string> = {};
     
     if (step === "info") {
       if (!formData.parentFirstName.trim()) newErrors.parentFirstName = "First name is required";
@@ -161,11 +225,14 @@ export default function RegisterPage() {
     }
     
     if (step === "camper") {
-      if (!formData.camperFirstName.trim()) newErrors.camperFirstName = "First name is required";
-      if (!formData.camperLastName.trim()) newErrors.camperLastName = "Last name is required";
-      if (!formData.camperBirthdate) newErrors.camperBirthdate = "Birthdate is required";
-      if (!formData.camperAge.trim()) newErrors.camperAge = "Age is required";
-      if (!formData.tshirtSize) newErrors.tshirtSize = "T-shirt size is required";
+      // Validate each camper
+      formData.campers.forEach((camper, i) => {
+        if (!camper.firstName.trim()) newErrors[`camper_${i}_firstName`] = "First name is required";
+        if (!camper.lastName.trim()) newErrors[`camper_${i}_lastName`] = "Last name is required";
+        if (!camper.birthdate) newErrors[`camper_${i}_birthdate`] = "Birthdate is required";
+        if (!camper.age.trim()) newErrors[`camper_${i}_age`] = "Age is required";
+        if (!camper.tshirtSize) newErrors[`camper_${i}_tshirtSize`] = "T-shirt size is required";
+      });
       if (!formData.emergencyName.trim()) newErrors.emergencyName = "Emergency contact name is required";
       if (!formData.emergencyPhone.trim()) {
         newErrors.emergencyPhone = "Emergency phone is required";
@@ -244,7 +311,7 @@ export default function RegisterPage() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-4">Registration Complete!</h1>
           <p className="text-slate-300 mb-6">
-            We&apos;ve received your registration for {formData.camperFirstName}. 
+            We&apos;ve received your registration for {formData.campers.map(c => c.firstName).join(" and ")}. 
             Check your email ({formData.parentEmail}) for confirmation and next steps.
           </p>
           <Link 
@@ -278,10 +345,10 @@ export default function RegisterPage() {
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
           Register for Summer Camp 2026
         </h1>
-        <p className="text-slate-400">June 29 – July 3 • Ages 10–15 • ${pricing.currentPrice}</p>
+        <p className="text-slate-400">June 29 – July 3 • Ages 10–15 • ${pricing.basePrice}/camper</p>
         {pricing.isEarlyBird && (
           <p className="text-emerald-400 text-sm mt-1">
-            🎉 Early bird pricing! Save ${pricing.savings} — ends April 30
+            🎉 Early bird pricing! Save ${pricing.earlyBirdSavings} — ends April 30
           </p>
         )}
       </header>
@@ -339,34 +406,71 @@ export default function RegisterPage() {
           {/* Step 2: Camper Info */}
           {currentStep === "camper" && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-white mb-4">Camper Information</h2>
-              
-              <div className="grid md:grid-cols-2 gap-4">
-                <Input label="First Name *" value={formData.camperFirstName} onChange={(v) => updateField("camperFirstName", v)} error={errors.camperFirstName} />
-                <Input label="Last Name *" value={formData.camperLastName} onChange={(v) => updateField("camperLastName", v)} error={errors.camperLastName} />
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-white">Camper Information</h2>
+                {formData.campers.length > 1 && (
+                  <span className="text-emerald-400 text-sm">
+                    🎉 10% sibling discount applied!
+                  </span>
+                )}
               </div>
               
-              <div className="grid md:grid-cols-3 gap-4">
-                <Input label="Birthdate *" type="date" value={formData.camperBirthdate} onChange={(v) => updateField("camperBirthdate", v)} error={errors.camperBirthdate} />
-                <Input label="Age *" value={formData.camperAge} onChange={(v) => updateField("camperAge", v)} error={errors.camperAge} />
-                <Input label="Grade (Fall 2026)" value={formData.camperGrade} onChange={(v) => updateField("camperGrade", v)} />
-              </div>
-              
-              <Select 
-                label="T-Shirt Size *" 
-                value={formData.tshirtSize} 
-                onChange={(v) => updateField("tshirtSize", v)}
-                error={errors.tshirtSize}
-                options={[
-                  { value: "", label: "Select size..." },
-                  { value: "YS", label: "Youth Small" },
-                  { value: "YM", label: "Youth Medium" },
-                  { value: "YL", label: "Youth Large" },
-                  { value: "AS", label: "Adult Small" },
-                  { value: "AM", label: "Adult Medium" },
-                  { value: "AL", label: "Adult Large" },
-                ]}
-              />
+              {formData.campers.map((camper, index) => (
+                <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-white">
+                      {index === 0 ? "Camper" : `Sibling ${index}`}
+                      {index > 0 && <span className="text-emerald-400 text-sm ml-2">(10% off)</span>}
+                    </h3>
+                    {index > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => removeCamper(index)}
+                        className="text-red-400 hover:text-red-300 text-sm"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <Input label="First Name *" value={camper.firstName} onChange={(v) => updateCamper(index, "firstName", v)} error={errors[`camper_${index}_firstName`]} />
+                    <Input label="Last Name *" value={camper.lastName} onChange={(v) => updateCamper(index, "lastName", v)} error={errors[`camper_${index}_lastName`]} />
+                  </div>
+                  
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <Input label="Birthdate *" type="date" value={camper.birthdate} onChange={(v) => updateCamper(index, "birthdate", v)} error={errors[`camper_${index}_birthdate`]} />
+                    <Input label="Age *" value={camper.age} onChange={(v) => updateCamper(index, "age", v)} error={errors[`camper_${index}_age`]} />
+                    <Input label="Grade (Fall 2026)" value={camper.grade} onChange={(v) => updateCamper(index, "grade", v)} />
+                  </div>
+                  
+                  <Select 
+                    label="T-Shirt Size *" 
+                    value={camper.tshirtSize} 
+                    onChange={(v) => updateCamper(index, "tshirtSize", v)}
+                    error={errors[`camper_${index}_tshirtSize`]}
+                    options={[
+                      { value: "", label: "Select size..." },
+                      { value: "YS", label: "Youth Small" },
+                      { value: "YM", label: "Youth Medium" },
+                      { value: "YL", label: "Youth Large" },
+                      { value: "AS", label: "Adult Small" },
+                      { value: "AM", label: "Adult Medium" },
+                      { value: "AL", label: "Adult Large" },
+                    ]}
+                  />
+                </div>
+              ))}
+
+              {formData.campers.length < 4 && (
+                <button
+                  type="button"
+                  onClick={addCamper}
+                  className="w-full py-3 border-2 border-dashed border-white/20 rounded-xl text-slate-400 hover:text-white hover:border-white/40 transition-colors"
+                >
+                  + Add Sibling (10% off)
+                </button>
+              )}
 
               <div className="border-t border-white/10 pt-6 mt-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Emergency Contact (other than parent)</h3>
@@ -384,35 +488,46 @@ export default function RegisterPage() {
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-white mb-4">Medical Information</h2>
               
-              <Textarea 
-                label="Allergies" 
-                placeholder="List any food, medication, or environmental allergies..."
-                value={formData.allergies} 
-                onChange={(v) => updateField("allergies", v)} 
-              />
-              
-              <Textarea 
-                label="Current Medications" 
-                placeholder="List any medications your child takes regularly..."
-                value={formData.medications} 
-                onChange={(v) => updateField("medications", v)} 
-              />
-              
-              <Textarea 
-                label="Medical Conditions / Special Needs" 
-                placeholder="Any conditions we should be aware of (ADHD, asthma, etc.)..."
-                value={formData.medicalConditions} 
-                onChange={(v) => updateField("medicalConditions", v)} 
-              />
+              {formData.campers.map((camper, index) => (
+                <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-4">
+                  <h3 className="text-lg font-semibold text-white">
+                    {camper.firstName || `Camper ${index + 1}`}
+                  </h3>
+                  
+                  <Textarea 
+                    label="Allergies" 
+                    placeholder="List any food, medication, or environmental allergies..."
+                    value={camper.allergies} 
+                    onChange={(v) => updateCamper(index, "allergies", v)} 
+                  />
+                  
+                  <Textarea 
+                    label="Current Medications" 
+                    placeholder="List any medications they take regularly..."
+                    value={camper.medications} 
+                    onChange={(v) => updateCamper(index, "medications", v)} 
+                  />
+                  
+                  <Textarea 
+                    label="Medical Conditions / Special Needs" 
+                    placeholder="Any conditions we should be aware of (ADHD, asthma, etc.)..."
+                    value={camper.medicalConditions} 
+                    onChange={(v) => updateCamper(index, "medicalConditions", v)} 
+                  />
+                </div>
+              ))}
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <Input label="Doctor Name" value={formData.doctorName} onChange={(v) => updateField("doctorName", v)} />
-                <Input label="Doctor Phone" type="tel" value={formData.doctorPhone} onChange={(v) => updateField("doctorPhone", v)} />
-              </div>
+              <div className="border-t border-white/10 pt-6 mt-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Family Doctor & Insurance</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Input label="Doctor Name" value={formData.doctorName} onChange={(v) => updateField("doctorName", v)} />
+                  <Input label="Doctor Phone" type="tel" value={formData.doctorPhone} onChange={(v) => updateField("doctorPhone", v)} />
+                </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <Input label="Insurance Provider" value={formData.insuranceProvider} onChange={(v) => updateField("insuranceProvider", v)} />
-                <Input label="Policy Number" value={formData.insurancePolicyNumber} onChange={(v) => updateField("insurancePolicyNumber", v)} />
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <Input label="Insurance Provider" value={formData.insuranceProvider} onChange={(v) => updateField("insuranceProvider", v)} />
+                  <Input label="Policy Number" value={formData.insurancePolicyNumber} onChange={(v) => updateField("insurancePolicyNumber", v)} />
+                </div>
               </div>
             </div>
           )}
@@ -477,30 +592,38 @@ export default function RegisterPage() {
               <h2 className="text-xl font-semibold text-white mb-4">Payment</h2>
               
               <div className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-white/10 rounded-xl p-6">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-slate-300">Summer Camp 2026</span>
-                  {pricing.isEarlyBird ? (
-                    <div className="text-right">
-                      <span className="text-slate-500 line-through text-sm">${pricing.regularPrice}</span>
-                      <span className="text-white font-semibold ml-2">${pricing.currentPrice}</span>
-                    </div>
-                  ) : (
-                    <span className="text-white font-semibold">${pricing.currentPrice}</span>
-                  )}
-                </div>
+                <div className="text-sm text-slate-400 mb-4">June 29 – July 3, 9am–3pm</div>
+                
+                {/* Line items for each camper */}
+                {formData.campers.map((camper, index) => (
+                  <div key={index} className="flex justify-between items-center mb-2">
+                    <span className="text-slate-300">
+                      {camper.firstName || `Camper ${index + 1}`}
+                      {index > 0 && <span className="text-emerald-400 text-sm ml-2">(sibling)</span>}
+                    </span>
+                    <span className="text-white font-semibold">
+                      ${index === 0 ? pricing.basePrice : pricing.siblingPrice}
+                    </span>
+                  </div>
+                ))}
+                
+                {/* Discounts */}
                 {pricing.isEarlyBird && (
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-emerald-400 text-sm">🎉 Early Bird Discount</span>
-                    <span className="text-emerald-400 text-sm">-${pricing.savings}</span>
+                  <div className="flex justify-between items-center mb-2 text-sm">
+                    <span className="text-emerald-400">🎉 Early Bird Discount</span>
+                    <span className="text-emerald-400">-${pricing.earlyBirdSavings * pricing.camperCount}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center text-sm text-slate-400 mb-4">
-                  <span>June 29 – July 3, 9am–3pm</span>
-                  <span>1 camper</span>
-                </div>
-                <div className="border-t border-white/10 pt-4 flex justify-between items-center">
+                {pricing.siblingDiscount > 0 && (
+                  <div className="flex justify-between items-center mb-2 text-sm">
+                    <span className="text-emerald-400">👯 Sibling Discount (10% off)</span>
+                    <span className="text-emerald-400">-${pricing.siblingDiscount}</span>
+                  </div>
+                )}
+                
+                <div className="border-t border-white/10 pt-4 mt-4 flex justify-between items-center">
                   <span className="text-white font-semibold">Total</span>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 text-transparent bg-clip-text">${pricing.currentPrice}</span>
+                  <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 text-transparent bg-clip-text">${pricing.total}</span>
                 </div>
               </div>
 

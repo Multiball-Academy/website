@@ -20,16 +20,20 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 -- Insert the June 2026 session
 INSERT INTO sessions (id, name, start_date, end_date, capacity, price_cents, status)
-VALUES ('summer-2026-june', 'Summer Camp 2026 - Session 1', '2026-06-23', '2026-06-27', 12, 29500, 'open')
-ON CONFLICT (id) DO NOTHING;
+VALUES ('summer-2026-june', 'Summer Camp 2026', '2026-06-29', '2026-07-03', 12, 29500, 'open')
+ON CONFLICT (id) DO UPDATE SET start_date = '2026-06-29', end_date = '2026-07-03', name = 'Summer Camp 2026';
 
 -- Registrations table
 CREATE TABLE IF NOT EXISTS registrations (
   id TEXT PRIMARY KEY,
+  registration_group_id TEXT, -- Links siblings in same registration
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'cancelled', 'refunded', 'waitlist')),
   session_id TEXT NOT NULL REFERENCES sessions(id),
+  is_test BOOLEAN NOT NULL DEFAULT FALSE, -- True for test registrations
+  is_sibling BOOLEAN NOT NULL DEFAULT FALSE, -- True for 2nd+ campers
+  price_cents INTEGER, -- Individual price for this camper
   
   -- Parent/Guardian
   parent_first_name TEXT NOT NULL,
@@ -83,6 +87,8 @@ CREATE TABLE IF NOT EXISTS registrations (
 CREATE INDEX IF NOT EXISTS idx_registrations_session ON registrations(session_id);
 CREATE INDEX IF NOT EXISTS idx_registrations_status ON registrations(status);
 CREATE INDEX IF NOT EXISTS idx_registrations_email ON registrations(parent_email);
+CREATE INDEX IF NOT EXISTS idx_registrations_group ON registrations(registration_group_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_test ON registrations(is_test);
 
 -- Create trigger to update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at()
