@@ -1,20 +1,269 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
-const SAWYER_URL = "https://www.sawyer.com/providers/multiball-academy"; // Update once Sawyer account is created
+type FormStep = "info" | "camper" | "medical" | "agreements" | "payment";
 
-const sessions = [
-  { id: 1, dates: "June 23–27", status: "open" },
+// Pricing constants (mirrored from server)
+const REGULAR_PRICE = 395;
+const EARLY_BIRD_PRICE = 295;
+const EARLY_BIRD_DEADLINE = new Date("2026-04-30T23:59:59");
+
+function useEarlyBird() {
+  const [isEarlyBird, setIsEarlyBird] = useState(true);
+  
+  useEffect(() => {
+    setIsEarlyBird(new Date() <= EARLY_BIRD_DEADLINE);
+  }, []);
+  
+  return {
+    isEarlyBird,
+    currentPrice: isEarlyBird ? EARLY_BIRD_PRICE : REGULAR_PRICE,
+    regularPrice: REGULAR_PRICE,
+    savings: REGULAR_PRICE - EARLY_BIRD_PRICE,
+  };
+}
+
+interface FormData {
+  // Parent/Guardian
+  parentFirstName: string;
+  parentLastName: string;
+  parentEmail: string;
+  parentPhone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  
+  // Camper
+  camperFirstName: string;
+  camperLastName: string;
+  camperBirthdate: string;
+  camperAge: string;
+  camperGrade: string;
+  tshirtSize: string;
+  
+  // Emergency Contact
+  emergencyName: string;
+  emergencyPhone: string;
+  emergencyRelation: string;
+  
+  // Medical
+  allergies: string;
+  medications: string;
+  medicalConditions: string;
+  doctorName: string;
+  doctorPhone: string;
+  insuranceProvider: string;
+  insurancePolicyNumber: string;
+  
+  // Agreements
+  photoRelease: boolean;
+  liabilityWaiver: boolean;
+  codeOfConduct: boolean;
+  
+  // How did you hear
+  howHeard: string;
+  additionalNotes: string;
+}
+
+const initialFormData: FormData = {
+  parentFirstName: "",
+  parentLastName: "",
+  parentEmail: "",
+  parentPhone: "",
+  address: "",
+  city: "",
+  state: "",
+  zip: "",
+  camperFirstName: "",
+  camperLastName: "",
+  camperBirthdate: "",
+  camperAge: "",
+  camperGrade: "",
+  tshirtSize: "",
+  emergencyName: "",
+  emergencyPhone: "",
+  emergencyRelation: "",
+  allergies: "",
+  medications: "",
+  medicalConditions: "",
+  doctorName: "",
+  doctorPhone: "",
+  insuranceProvider: "",
+  insurancePolicyNumber: "",
+  photoRelease: false,
+  liabilityWaiver: false,
+  codeOfConduct: false,
+  howHeard: "",
+  additionalNotes: "",
+};
+
+const steps: { id: FormStep; label: string }[] = [
+  { id: "info", label: "Parent Info" },
+  { id: "camper", label: "Camper Info" },
+  { id: "medical", label: "Medical" },
+  { id: "agreements", label: "Agreements" },
+  { id: "payment", label: "Payment" },
 ];
 
 export default function RegisterPage() {
+  const [currentStep, setCurrentStep] = useState<FormStep>("info");
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const pricing = useEarlyBird();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
+
+  const updateField = (field: keyof FormData, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error when user types
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const markTouched = (field: keyof FormData) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const validatePhone = (phone: string) => {
+    return /^[\d\s\-\(\)\+]{10,}$/.test(phone.replace(/\D/g, '') ? phone : '');
+  };
+
+  const validateStep = (step: FormStep): boolean => {
+    const newErrors: Partial<Record<keyof FormData, string>> = {};
+    
+    if (step === "info") {
+      if (!formData.parentFirstName.trim()) newErrors.parentFirstName = "First name is required";
+      if (!formData.parentLastName.trim()) newErrors.parentLastName = "Last name is required";
+      if (!formData.parentEmail.trim()) {
+        newErrors.parentEmail = "Email is required";
+      } else if (!validateEmail(formData.parentEmail)) {
+        newErrors.parentEmail = "Please enter a valid email";
+      }
+      if (!formData.parentPhone.trim()) {
+        newErrors.parentPhone = "Phone is required";
+      } else if (!validatePhone(formData.parentPhone)) {
+        newErrors.parentPhone = "Please enter a valid phone number";
+      }
+      if (!formData.address.trim()) newErrors.address = "Address is required";
+      if (!formData.city.trim()) newErrors.city = "City is required";
+      if (!formData.state.trim()) newErrors.state = "State is required";
+      if (!formData.zip.trim()) newErrors.zip = "ZIP code is required";
+    }
+    
+    if (step === "camper") {
+      if (!formData.camperFirstName.trim()) newErrors.camperFirstName = "First name is required";
+      if (!formData.camperLastName.trim()) newErrors.camperLastName = "Last name is required";
+      if (!formData.camperBirthdate) newErrors.camperBirthdate = "Birthdate is required";
+      if (!formData.camperAge.trim()) newErrors.camperAge = "Age is required";
+      if (!formData.tshirtSize) newErrors.tshirtSize = "T-shirt size is required";
+      if (!formData.emergencyName.trim()) newErrors.emergencyName = "Emergency contact name is required";
+      if (!formData.emergencyPhone.trim()) {
+        newErrors.emergencyPhone = "Emergency phone is required";
+      } else if (!validatePhone(formData.emergencyPhone)) {
+        newErrors.emergencyPhone = "Please enter a valid phone number";
+      }
+      if (!formData.emergencyRelation.trim()) newErrors.emergencyRelation = "Relationship is required";
+    }
+    
+    if (step === "agreements") {
+      if (!formData.liabilityWaiver) newErrors.liabilityWaiver = "Liability waiver must be accepted";
+      if (!formData.codeOfConduct) newErrors.codeOfConduct = "Code of conduct must be accepted";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
+
+  const goNext = () => {
+    if (!validateStep(currentStep)) {
+      return;
+    }
+    const nextIndex = currentStepIndex + 1;
+    if (nextIndex < steps.length) {
+      setCurrentStep(steps[nextIndex].id);
+      setErrors({});
+    }
+  };
+
+  const goBack = () => {
+    const prevIndex = currentStepIndex - 1;
+    if (prevIndex >= 0) {
+      setCurrentStep(steps[prevIndex].id);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    
+    try {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Registration failed. Please try again.");
+      }
+      
+      // Redirect to Stripe Checkout
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        setIsComplete(true);
+      }
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Something went wrong");
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isComplete) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white/10 border border-white/20 rounded-2xl p-8 max-w-lg text-center">
+          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-4">Registration Complete!</h1>
+          <p className="text-slate-300 mb-6">
+            We&apos;ve received your registration for {formData.camperFirstName}. 
+            Check your email ({formData.parentEmail}) for confirmation and next steps.
+          </p>
+          <Link 
+            href="/"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:from-cyan-400 hover:to-purple-400 transition-all"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Animated background elements */}
+      {/* Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-1000"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
       </div>
 
       {/* Nav */}
@@ -24,227 +273,428 @@ export default function RegisterPage() {
         </Link>
       </nav>
 
-      {/* Hero */}
-      <header className="relative z-10 text-center px-4 pt-8 pb-12">
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-          Summer Camp{" "}
-          <span className="bg-gradient-to-r from-cyan-400 to-purple-400 text-transparent bg-clip-text">
-            2026
-          </span>
+      {/* Header */}
+      <header className="relative z-10 text-center px-4 pt-4 pb-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+          Register for Summer Camp 2026
         </h1>
-        <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-          One week of pinball, making, and competition. Walk in a beginner, walk out a player.
-        </p>
+        <p className="text-slate-400">June 29 – July 3 • Ages 10–15 • ${pricing.currentPrice}</p>
+        {pricing.isEarlyBird && (
+          <p className="text-emerald-400 text-sm mt-1">
+            🎉 Early bird pricing! Save ${pricing.savings} — ends April 30
+          </p>
+        )}
       </header>
 
-      {/* Main content */}
-      <main className="relative z-10 max-w-4xl mx-auto px-4 pb-20">
-        {/* Quick Facts */}
-        <section className="mb-12">
-          <div className="grid md:grid-cols-4 gap-4 text-center">
-            {[
-              { label: "Ages", value: "10–15" },
-              { label: "Time", value: "9am–3pm" },
-              { label: "Capacity", value: "12 campers" },
-              { label: "Price", value: "$295/week" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="bg-white/5 border border-white/10 rounded-xl p-4"
+      {/* Progress */}
+      <div className="relative z-10 max-w-3xl mx-auto px-4 mb-8">
+        <div className="flex items-center justify-between">
+          {steps.map((step, i) => (
+            <div key={step.id} className="flex items-center">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors
+                ${i <= currentStepIndex 
+                  ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-white" 
+                  : "bg-white/10 text-slate-500"}`}
               >
-                <div className="text-2xl font-bold text-white">{item.value}</div>
-                <div className="text-slate-400 text-sm">{item.label}</div>
+                {i + 1}
               </div>
-            ))}
-          </div>
-        </section>
+              <span className={`hidden md:block ml-2 text-sm ${i <= currentStepIndex ? "text-white" : "text-slate-500"}`}>
+                {step.label}
+              </span>
+              {i < steps.length - 1 && (
+                <div className={`w-8 md:w-16 h-0.5 mx-2 ${i < currentStepIndex ? "bg-purple-500" : "bg-white/10"}`} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
-        {/* Session */}
-        <section className="mb-12">
-          <div className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-white/10 rounded-xl p-6 text-center">
-            <div className="text-slate-400 text-sm uppercase tracking-wide mb-1">Summer 2026</div>
-            <div className="text-3xl font-bold text-white mb-2">June 23–27</div>
-            <div className="text-slate-300">Monday–Friday, 9am–3pm</div>
-            <span className="inline-block mt-3 px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm">
-              Spots Available
-            </span>
-          </div>
-        </section>
+      {/* Form */}
+      <main className="relative z-10 max-w-2xl mx-auto px-4 pb-20">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8">
+          
+          {/* Step 1: Parent Info */}
+          {currentStep === "info" && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Parent/Guardian Information</h2>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <Input label="First Name *" value={formData.parentFirstName} onChange={(v) => updateField("parentFirstName", v)} error={errors.parentFirstName} />
+                <Input label="Last Name *" value={formData.parentLastName} onChange={(v) => updateField("parentLastName", v)} error={errors.parentLastName} />
+              </div>
+              
+              <Input label="Email *" type="email" value={formData.parentEmail} onChange={(v) => updateField("parentEmail", v)} error={errors.parentEmail} />
+              <Input label="Phone *" type="tel" value={formData.parentPhone} onChange={(v) => updateField("parentPhone", v)} error={errors.parentPhone} />
+              
+              <Input label="Street Address *" value={formData.address} onChange={(v) => updateField("address", v)} error={errors.address} />
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                <Input label="City *" value={formData.city} onChange={(v) => updateField("city", v)} error={errors.city} />
+                <Input label="State *" value={formData.state} onChange={(v) => updateField("state", v)} error={errors.state} />
+                <Input label="ZIP *" value={formData.zip} onChange={(v) => updateField("zip", v)} error={errors.zip} />
+              </div>
+            </div>
+          )}
 
-        {/* What's Included */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-4">What&apos;s Included</h2>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <ul className="space-y-3 text-slate-300">
-              {[
-                "Full week of instruction (Mon–Fri, 9am–3pm)",
-                "Professional pinball machines to learn and compete on",
-                "Maker lab supplies: switches, LEDs, solenoids, wiring",
-                "Build a kinetic sculpture with real pinball parts (yours to keep!)",
-                "Lab notebook for experiments and designs",
-                "Friday tournament with trophies + science fair for parents",
-                "Camp t-shirt and completion certificate",
-                "Snacks and drinks daily",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <span className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 mt-2 flex-shrink-0"></span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
+          {/* Step 2: Camper Info */}
+          {currentStep === "camper" && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Camper Information</h2>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <Input label="First Name *" value={formData.camperFirstName} onChange={(v) => updateField("camperFirstName", v)} error={errors.camperFirstName} />
+                <Input label="Last Name *" value={formData.camperLastName} onChange={(v) => updateField("camperLastName", v)} error={errors.camperLastName} />
+              </div>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                <Input label="Birthdate *" type="date" value={formData.camperBirthdate} onChange={(v) => updateField("camperBirthdate", v)} error={errors.camperBirthdate} />
+                <Input label="Age *" value={formData.camperAge} onChange={(v) => updateField("camperAge", v)} error={errors.camperAge} />
+                <Input label="Grade (Fall 2026)" value={formData.camperGrade} onChange={(v) => updateField("camperGrade", v)} />
+              </div>
+              
+              <Select 
+                label="T-Shirt Size *" 
+                value={formData.tshirtSize} 
+                onChange={(v) => updateField("tshirtSize", v)}
+                error={errors.tshirtSize}
+                options={[
+                  { value: "", label: "Select size..." },
+                  { value: "YS", label: "Youth Small" },
+                  { value: "YM", label: "Youth Medium" },
+                  { value: "YL", label: "Youth Large" },
+                  { value: "AS", label: "Adult Small" },
+                  { value: "AM", label: "Adult Medium" },
+                  { value: "AL", label: "Adult Large" },
+                ]}
+              />
 
-        {/* The Week */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-4">The Week</h2>
-          <div className="space-y-3">
-            {[
-              { 
-                day: "Monday", 
-                focus: "How Things Work", 
-                skills: "Ball control, trapping, flipper basics",
-                maker: "Open up a machine, build your first circuit (switch → LED)"
-              },
-              { 
-                day: "Tuesday", 
-                focus: "Physics of the Game", 
-                skills: "Shot selection, safe vs. dangerous plays",
-                maker: "Run physics experiments, wire a kicker coil that fires"
-              },
-              { 
-                day: "Wednesday", 
-                focus: "Cracking the Code", 
-                skills: "Reading rules, starting modes on purpose",
-                maker: "How the computer works: inputs, outputs, game logic"
-              },
-              { 
-                day: "Thursday", 
-                focus: "Build Day", 
-                skills: "Tournament prep, playing under pressure",
-                maker: "Design and build your kinetic sculpture with real pinball parts"
-              },
-              { 
-                day: "Friday", 
-                focus: "Showcase Day", 
-                skills: "Tournament finals, awards ceremony",
-                maker: "Finish sculptures, science fair for parents at 2pm"
-              },
-            ].map((item) => (
-              <div
-                key={item.day}
-                className="bg-white/5 border border-white/10 rounded-xl p-4"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="text-cyan-400 font-semibold w-28">{item.day}</div>
-                  <div className="text-white font-semibold">{item.focus}</div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <span className="text-purple-400">🎯</span>
-                    <span className="text-slate-400">{item.skills}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-purple-400">🔧</span>
-                    <span className="text-slate-400">{item.maker}</span>
-                  </div>
+              <div className="border-t border-white/10 pt-6 mt-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Emergency Contact (other than parent)</h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <Input label="Name *" value={formData.emergencyName} onChange={(v) => updateField("emergencyName", v)} error={errors.emergencyName} />
+                  <Input label="Phone *" type="tel" value={formData.emergencyPhone} onChange={(v) => updateField("emergencyPhone", v)} error={errors.emergencyPhone} />
+                  <Input label="Relationship *" value={formData.emergencyRelation} onChange={(v) => updateField("emergencyRelation", v)} error={errors.emergencyRelation} />
                 </div>
               </div>
-            ))}
-          </div>
-          <p className="text-slate-500 text-sm mt-4 italic">
-            Every day: Skills Lab + Maker Lab + Free Play. Campers keep a lab notebook like a real scientist.
-          </p>
-        </section>
+            </div>
+          )}
 
-        {/* What to Bring */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-4">What to Bring</h2>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <ul className="space-y-2 text-slate-300">
-              {[
-                "Comfortable clothes (you'll be standing and moving)",
-                "Closed-toe shoes",
-                "Water bottle",
-                "Lunch (or money for nearby food)",
-                "Curiosity and a willingness to learn",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <span className="text-slate-500">•</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
+          {/* Step 3: Medical */}
+          {currentStep === "medical" && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Medical Information</h2>
+              
+              <Textarea 
+                label="Allergies" 
+                placeholder="List any food, medication, or environmental allergies..."
+                value={formData.allergies} 
+                onChange={(v) => updateField("allergies", v)} 
+              />
+              
+              <Textarea 
+                label="Current Medications" 
+                placeholder="List any medications your child takes regularly..."
+                value={formData.medications} 
+                onChange={(v) => updateField("medications", v)} 
+              />
+              
+              <Textarea 
+                label="Medical Conditions / Special Needs" 
+                placeholder="Any conditions we should be aware of (ADHD, asthma, etc.)..."
+                value={formData.medicalConditions} 
+                onChange={(v) => updateField("medicalConditions", v)} 
+              />
 
-        {/* Register CTA */}
-        <section className="text-center">
-          <a
-            href={SAWYER_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-10 py-5 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xl font-semibold hover:from-cyan-400 hover:to-purple-400 transition-all duration-200 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
-          >
-            Register Now
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </a>
-          <p className="text-slate-400 mt-4 text-sm">
-            Registration powered by Sawyer. Secure checkout, payment plans available.
-          </p>
-        </section>
-
-        {/* FAQ */}
-        <section className="mt-16">
-          <h2 className="text-2xl font-bold text-white mb-4">Questions?</h2>
-          <div className="space-y-4">
-            {[
-              { 
-                q: "What if my kid has never played pinball?", 
-                a: "Perfect! Most campers are beginners. We start from scratch and meet each kid where they are." 
-              },
-              { 
-                q: "Is there a sibling discount?", 
-                a: "Yes! 10% off the second camper. Enter code SIBLING at checkout." 
-              },
-              { 
-                q: "What's the refund policy?", 
-                a: "Full refund up to 14 days before camp. 50% refund up to 7 days before. No refunds within 7 days (but you can transfer to another session if space is available)." 
-              },
-              { 
-                q: "Where is camp located?", 
-                a: "Memphis, TN. Exact location will be shared with registered families 2 weeks before camp." 
-              },
-              { 
-                q: "Will there be more sessions?", 
-                a: "If this summer goes well, we'll add more sessions in the future. Get in on the first one!" 
-              },
-            ].map((item) => (
-              <div key={item.q} className="bg-white/5 border border-white/10 rounded-xl p-5">
-                <h3 className="text-white font-semibold mb-2">{item.q}</h3>
-                <p className="text-slate-400">{item.a}</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Input label="Doctor Name" value={formData.doctorName} onChange={(v) => updateField("doctorName", v)} />
+                <Input label="Doctor Phone" type="tel" value={formData.doctorPhone} onChange={(v) => updateField("doctorPhone", v)} />
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* Contact */}
-        <section className="mt-12 text-center">
-          <p className="text-slate-400">
-            More questions? Email us at{" "}
-            <a href="mailto:hello@multiballacademy.com" className="text-cyan-400 hover:underline">
-              hello@multiballacademy.com
-            </a>
-          </p>
-        </section>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Input label="Insurance Provider" value={formData.insuranceProvider} onChange={(v) => updateField("insuranceProvider", v)} />
+                <Input label="Policy Number" value={formData.insurancePolicyNumber} onChange={(v) => updateField("insurancePolicyNumber", v)} />
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Agreements */}
+          {currentStep === "agreements" && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Agreements</h2>
+              
+              <Checkbox 
+                checked={formData.photoRelease}
+                onChange={(v) => updateField("photoRelease", v)}
+                label="Photo/Video Release"
+                description="I grant Multiball Academy permission to photograph and video my child for promotional materials, social media, and documentation purposes."
+              />
+              
+              <Checkbox 
+                checked={formData.liabilityWaiver}
+                onChange={(v) => updateField("liabilityWaiver", v)}
+                label="Liability Waiver *"
+                description="I understand that pinball and maker activities involve some risk of injury. I release Multiball Academy, its staff, and volunteers from liability for any injuries that may occur during camp activities."
+                error={errors.liabilityWaiver}
+              />
+              
+              <Checkbox 
+                checked={formData.codeOfConduct}
+                onChange={(v) => updateField("codeOfConduct", v)}
+                label="Code of Conduct *"
+                description="I have reviewed the Code of Conduct with my child. I understand that disruptive or unsafe behavior may result in dismissal from camp without refund."
+                error={errors.codeOfConduct}
+              />
+
+              <div className="border-t border-white/10 pt-6 mt-6">
+                <Select 
+                  label="How did you hear about us?"
+                  value={formData.howHeard} 
+                  onChange={(v) => updateField("howHeard", v)}
+                  options={[
+                    { value: "", label: "Select..." },
+                    { value: "friend", label: "Friend or family" },
+                    { value: "social", label: "Social media" },
+                    { value: "search", label: "Google search" },
+                    { value: "pinball", label: "Pinball community" },
+                    { value: "school", label: "School flyer" },
+                    { value: "other", label: "Other" },
+                  ]}
+                />
+                
+                <Textarea 
+                  label="Anything else we should know?" 
+                  placeholder="Special requests, questions, or things you'd like us to know about your camper..."
+                  value={formData.additionalNotes} 
+                  onChange={(v) => updateField("additionalNotes", v)} 
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Payment */}
+          {currentStep === "payment" && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Payment</h2>
+              
+              <div className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-white/10 rounded-xl p-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-300">Summer Camp 2026</span>
+                  {pricing.isEarlyBird ? (
+                    <div className="text-right">
+                      <span className="text-slate-500 line-through text-sm">${pricing.regularPrice}</span>
+                      <span className="text-white font-semibold ml-2">${pricing.currentPrice}</span>
+                    </div>
+                  ) : (
+                    <span className="text-white font-semibold">${pricing.currentPrice}</span>
+                  )}
+                </div>
+                {pricing.isEarlyBird && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-emerald-400 text-sm">🎉 Early Bird Discount</span>
+                    <span className="text-emerald-400 text-sm">-${pricing.savings}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-sm text-slate-400 mb-4">
+                  <span>June 29 – July 3, 9am–3pm</span>
+                  <span>1 camper</span>
+                </div>
+                <div className="border-t border-white/10 pt-4 flex justify-between items-center">
+                  <span className="text-white font-semibold">Total</span>
+                  <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 text-transparent bg-clip-text">${pricing.currentPrice}</span>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
+                <p className="text-slate-300 mb-4">
+                  You&apos;ll be redirected to Stripe to complete your secure payment.
+                </p>
+                <p className="text-slate-500 text-sm">
+                  🔒 Secure checkout powered by Stripe
+                </p>
+              </div>
+
+              {submitError && (
+                <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-300">
+                  {submitError}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex justify-between mt-8 pt-6 border-t border-white/10">
+            {currentStepIndex > 0 ? (
+              <button
+                onClick={goBack}
+                className="px-6 py-3 rounded-full border border-white/20 text-white hover:bg-white/5 transition-colors"
+              >
+                ← Back
+              </button>
+            ) : (
+              <div />
+            )}
+            
+            {currentStep === "payment" ? (
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting || !formData.liabilityWaiver || !formData.codeOfConduct}
+                className="px-8 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:from-cyan-400 hover:to-purple-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Processing..." : "Complete Registration"}
+              </button>
+            ) : (
+              <button
+                onClick={goNext}
+                className="px-8 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:from-cyan-400 hover:to-purple-400 transition-all"
+              >
+                Continue →
+              </button>
+            )}
+          </div>
+        </div>
       </main>
+    </div>
+  );
+}
 
-      {/* Footer */}
-      <footer className="relative z-10 pb-8 text-slate-500 text-sm text-center">
-        <p>© 2026 Multiball Academy. All rights reserved.</p>
-      </footer>
+// Form Components
+function Input({ 
+  label, 
+  type = "text", 
+  value, 
+  onChange,
+  onBlur,
+  placeholder,
+  error,
+}: { 
+  label: string; 
+  type?: string; 
+  value: string; 
+  onChange: (v: string) => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  error?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm text-slate-400 mb-1">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        placeholder={placeholder}
+        className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:outline-none transition-colors ${
+          error ? "border-red-500 focus:border-red-400" : "border-white/10 focus:border-purple-500"
+        }`}
+      />
+      {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
+    </div>
+  );
+}
+
+function Textarea({ 
+  label, 
+  value, 
+  onChange,
+  placeholder,
+}: { 
+  label: string; 
+  value: string; 
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm text-slate-400 mb-1">{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors resize-none"
+      />
+    </div>
+  );
+}
+
+function Select({ 
+  label, 
+  value, 
+  onChange,
+  options,
+  error,
+}: { 
+  label: string; 
+  value: string; 
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  error?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm text-slate-400 mb-1">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white focus:outline-none transition-colors ${
+          error ? "border-red-500 focus:border-red-400" : "border-white/10 focus:border-purple-500"
+        }`}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value} className="bg-slate-800">
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
+    </div>
+  );
+}
+
+function Checkbox({ 
+  label, 
+  description,
+  checked, 
+  onChange,
+  error,
+}: { 
+  label: string; 
+  description: string;
+  checked: boolean; 
+  onChange: (v: boolean) => void;
+  error?: string;
+}) {
+  return (
+    <div>
+      <label className="flex items-start gap-4 cursor-pointer group">
+        <div className="pt-1">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => onChange(e.target.checked)}
+            className="sr-only"
+          />
+          <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors
+            ${checked 
+              ? "bg-gradient-to-r from-cyan-500 to-purple-500 border-transparent" 
+              : error 
+                ? "border-red-500 group-hover:border-red-400"
+                : "border-white/30 group-hover:border-white/50"}`}
+          >
+            {checked && (
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        </div>
+        <div>
+          <div className="text-white font-medium">{label}</div>
+          <div className="text-slate-400 text-sm">{description}</div>
+        </div>
+      </label>
+      {error && <p className="mt-1 text-sm text-red-400 ml-10">{error}</p>}
     </div>
   );
 }
